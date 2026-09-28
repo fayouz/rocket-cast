@@ -4,6 +4,10 @@ Toutes les évolutions notables de Rocket Cast. Le format suit [Keep a Changelog
 
 ## [Non publié]
 
+### Ajouté
+
+- **Lieu d'un écran** : `placeId` (lieu Rocket Place, facultatif) et `placeName` (nom en cache), modifiables dans **Écrans** ; filtre `GET /api/screens?place=<uuid>`. L'écran de démo est rattaché au lieu de démo « Le port » (`0192f7c4-0000-7000-8000-000000000001`), qui sert aussi à la source Rocket Place de démo.
+
 ## [0.1.0] - 2026-09-28
 
 Première version de Rocket Cast, la brique d'affichage dynamique du Middleware Rocket.
