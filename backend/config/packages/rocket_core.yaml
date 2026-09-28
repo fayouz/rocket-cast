@@ -1,0 +1,4 @@
+rocket_core:
+    app_name: Rocket Cast
+    app_id: cast
+    token_prefix: rct_

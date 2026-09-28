@@ -1,0 +1,17 @@
+parameters:
+    env(ROCKET_SECRETS_KEY): ''
+    env(CAST_SOURCE_TIMEOUT): '5'
+    env(CAST_CLOUD_URL): ''
+    env(UPDATE_REPOSITORY): 'fayouz/rocket-cast'
+
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    App\:
+        resource: '../src/'
+
+when@test:
+    services:
+        App\Tests\Support\HttpMock: ~
