@@ -67,6 +67,20 @@ Les autres variables (base, JWT, LDAP, suite Rocket, mises à jour) sont celles 
 
 Le worker utilise l'image API avec `php bin/console messenger:consume async scheduler_default`.
 
+## Images Docker
+
+Publiées par la CI (workflow réutilisable `docker-images.yml` de rocket-core) **uniquement** sur tag `vX.Y.Z` et lancement manuel (Actions → CI → Run workflow) :
+
+| Image | Contenu |
+| --- | --- |
+| `ghcr.io/fayouz/rocket-cast-api` | API Symfony + worker (FrankenPHP Alpine, `composer --no-dev`, opcache, cible `prod` de `backend/Dockerfile`) |
+| `ghcr.io/fayouz/rocket-cast-front` | Front Nuxt (`.output` seul, `node:22-alpine`, utilisateur `node`, cible `prod` de `frontend/Dockerfile`) |
+
+- Tags : `vX.Y.Z`, `X.Y.Z`, `X.Y`, `latest` (dernier tag) et `sha-<commit>` ; multi-arch `linux/amd64` + `linux/arm64` ; labels OCI (source, version, révision), SBOM et provenance.
+- Sur les PR et branches : build `linux/amd64` de validation + tests de fumée, jamais poussé.
+- Le dépôt est public : les paquets peuvent être rendus publics (Package settings → visibility), ils sont alors gratuits et téléchargeables sans jeton.
+- Exemple de déploiement : [`compose.prod.yaml`](compose.prod.yaml) (base, API, worker, front, labels Traefik en commentaire).
+
 ## Gitflow
 
 - `main` : production (images `latest` et tags `vX.Y.Z`) ; `develop` : intégration.
