@@ -9,7 +9,7 @@ x-demo-env: &demo-env
   LDAP_ENABLED: "1"
   LDAP_ADMIN_GROUP_DN: cn=rocket-admins,ou=groups,dc=example,dc=org
   CORS_ALLOW_ORIGIN: ^http://localhost:3600$$
-  ROCKET_SECRETS_KEY: 0000000000000000000000000000000000000000000000000000000000000000
+  ROCKET_SECRETS_KEY: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
   # Demo screen (/s/<token>) and the fake upstream services of the demo sources, served by the api itself.
   DEMO_SCREEN_TOKEN: demo-screen-rocket-cast-0000000000000000000
   DEMO_SOURCE_BASE_URL: http://api

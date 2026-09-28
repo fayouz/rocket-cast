@@ -231,7 +231,7 @@ final class CastTest extends WebTestCase
 
         $id = $this->createPmsSource();
         $raw = (string) $this->em()->getConnection()->fetchOne('SELECT sealed_secrets FROM source');
-        self::assertStringStartsWith('v1:', $raw);
+        self::assertStringStartsWith('vault:cast.credentials.', $raw);
         self::assertStringNotContainsString(self::TV_TOKEN, $raw);
 
         $admin = $this->api('GET', '/api/sources/'.$id, authorization: $this->admin);
