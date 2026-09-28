@@ -1,6 +1,6 @@
 ---
 title: Rocket Cast
-description: Imprimez sur les imprimantes de l'entreprise depuis le navigateur ou depuis vos applications, via Samba, IPP ou CUPS.
+description: Affichage dynamique pour vos lieux — écrans, TV et tablettes pilotés par des playlists et alimentés par Rocket PMS, Rocket Place ou n'importe quelle API JSON.
 seo:
   title: Rocket Cast — Documentation
 ---
@@ -8,40 +8,38 @@ seo:
 ::u-page-hero
 ---
 orientation: horizontal
-title: Les imprimantes de l'entreprise, à portée d'API.
+title: Vos écrans, votre contenu, sans boîtier.
 ---
 #description
-Rocket Cast relie vos utilisateurs et vos applications aux imprimantes de l'entreprise : partages **Windows / Samba**, imprimantes réseau **IPP** et files **CUPS**. Files d'impression asynchrones, reprises automatiques, suivi de chaque document.
+Rocket Cast diffuse des **playlists** sur les TV, écrans et tablettes de vos lieux : un simple navigateur ouvert sur un lien. Accueil des voyageurs, Wi-Fi, météo, horloge, départ, images, QR codes, et des **panneaux alimentés par vos intégrations** (Rocket PMS, Rocket Place, Web JSON).
 
 #links
   :::u-button
   ---
-  to: /api/print-jobs
-  size: xl
-  trailing-icon: i-lucide-arrow-right
-  ---
-  Imprimer depuis une application
-  :::
-
-  :::u-button
-  ---
   to: /getting-started/introduction
   size: xl
-  color: neutral
-  variant: subtle
-  icon: i-lucide-book-open
+  trailing-icon: i-lucide-arrow-right
   ---
   Découvrir Rocket Cast
   :::
 
+  :::u-button
+  ---
+  to: /display/screens
+  size: xl
+  color: neutral
+  variant: subtle
+  icon: i-lucide-monitor
+  ---
+  Installer un écran
+  :::
+
 #default
-  ```bash [Terminal]
-  curl -X POST https://print.exemple.com/api/print-jobs \
-    -H "Authorization: Bearer rct_…" \
-    -H "X-Impersonate-User: alice@exemple.com" \
-    -F file=@facture.pdf \
-    -F printer=0199… -F copies=2 -F duplex=1
-  # → 201 { "id": "…", "status": "queued", … }
+  ```text [Sur la TV]
+  https://cast.exemple.com/pair
+
+  Code d'appairage de cet écran
+          K7F-3QX
   ```
 ::
 
@@ -52,50 +50,62 @@ Ce que vous pouvez faire
 #features
   :::u-page-feature
   ---
-  icon: i-lucide-network
-  to: /administration/printers
+  icon: i-lucide-link
+  to: /display/screens
   ---
   #title
-  Samba, IPP et CUPS
+  Écrans appairés en 10 secondes
 
   #description
-  Imprimantes partagées par un serveur Windows ou Samba (smbclient), imprimantes réseau et files CUPS en IPP, dossier de test.
+  Ouvrez /pair sur la TV, saisissez le code dans l'administration : l'écran reçoit son lien secret et affiche sa playlist.
   :::
 
   :::u-page-feature
   ---
-  icon: i-lucide-list-checks
-  to: /printing/print
+  icon: i-lucide-list-video
+  to: /display/playlists
   ---
   #title
-  Files d'impression asynchrones
+  Playlists programmées
 
   #description
-  Chaque document passe par une file traitée par le worker : reprises automatiques, annulation, réimpression et historique.
+  Panneaux avec durée et programmation (jours, heures, nuit), éditeur avec aperçu en direct, fuseau horaire par écran.
   :::
 
   :::u-page-feature
   ---
-  icon: i-lucide-code
-  to: /api/print-jobs
+  icon: i-lucide-plug
+  to: /display/sources
   ---
   #title
-  API pour vos applications
+  Sources branchables
 
   #description
-  Vos applications impriment au nom de leurs utilisateurs (impersonation), sans jamais connaître les imprimantes ni leurs identifiants.
+  Livret d'accueil et prénom du voyageur (Rocket PMS), valeurs domotiques (Rocket Place), n'importe quelle API JSON.
   :::
 
   :::u-page-feature
   ---
-  icon: i-lucide-activity
-  to: /administration/dashboard
+  icon: i-lucide-wifi-off
+  to: /display/screens#hors-ligne
   ---
   #title
-  Imprimantes surveillées
+  Tolérant aux coupures
 
   #description
-  Chaque imprimante active est vérifiée toutes les 5 minutes et apparaît dans l'état des services du tableau de bord.
+  L'écran garde le dernier contenu reçu et le rejoue tant que le réseau ou une source est indisponible.
+  :::
+
+  :::u-page-feature
+  ---
+  icon: i-lucide-lock
+  to: /display/sources#identifiants
+  ---
+  #title
+  Identifiants chiffrés
+
+  #description
+  Jetons des sources chiffrés en base (ROCKET_SECRETS_KEY), jamais renvoyés par l'API ; liens d'écran révocables.
   :::
 
   :::u-page-feature
@@ -107,18 +117,6 @@ Ce que vous pouvez faire
   Comptes locaux, LDAP et SSO
 
   #description
-  Synchronisation avec votre annuaire, connexion unique via Rocket Auth, rôle administrateur piloté par un groupe.
-  :::
-
-  :::u-page-feature
-  ---
-  icon: i-lucide-lock
-  to: /administration/printers#sécurité
-  ---
-  #title
-  Identifiants protégés
-
-  #description
-  Mots de passe des imprimantes chiffrés en base, jamais renvoyés par l'API ni passés en ligne de commande.
+  Le socle Rocket : annuaire, connexion unique via Rocket Auth, applications, tableau de bord et mises à jour.
   :::
 ::

@@ -4,29 +4,20 @@ Toutes les évolutions notables de Rocket Cast. Le format suit [Keep a Changelog
 
 ## [Non publié]
 
-### Ajouté
+## [0.1.0] - 2026-09-28
 
-- Mode suite : déconnexion depuis Rocket Auth (back-channel logout). Se déconnecter de Rocket Auth, ou y être désactivé, ferme les sessions dans Rocket Cast (`ROCKET_INTERNAL_URL`).
-
-## [0.1.0] - 2026-09-25
-
-Première version de Rocket Cast, la brique d'impression du Middleware Rocket.
+Première version de Rocket Cast, la brique d'affichage dynamique du Middleware Rocket.
 
 ### Ajouté
 
-- **Imprimantes** (Administration → Imprimantes) : nom, emplacement, description, recto verso, couleur, imprimante par défaut, activation. Trois connecteurs :
-  - **Partage Windows / Samba** par `smbclient` (`//serveur/imprimante`, `smb://…`, `\\serveur\imprimante`), avec compte de service et domaine ; identifiants passés par un fichier temporaire (`0600`), jamais en ligne de commande ;
-  - **IPP / CUPS** (`ipp://`, `ipps://`, `http(s)://`) : Print-Job avec exemplaires, recto verso et couleur, Get-Printer-Attributes pour l'état et le modèle, authentification HTTP Basic ;
-  - **Dossier** : documents et options écrits sous `PRINT_FOLDER_ROOT`, pour les tests, la démo ou l'archivage.
-  - **Tester la connexion** et **Imprimer une page de test** (PDF généré) ; mots de passe chiffrés en base et jamais renvoyés par l'API.
-- **Impression** : page **Imprimer** (dépôt par glisser-déposer, choix de l'imprimante, exemplaires, recto verso, couleur) et **Mes impressions** (statut en direct, recherche, filtres, voir le document, annuler, réimprimer). Les administrateurs voient **Toutes les impressions**.
-- **Files d'impression asynchrones** : le worker envoie les documents ; les échecs passagers sont retentés après 1 puis 5 minutes (3 tentatives), les échecs définitifs (identifiants, format refusé) s'arrêtent tout de suite avec l'erreur. Les documents sont supprimés après `PRINT_RETENTION_DAYS` jours (7) et les travaux interrompus en cours d'impression passent en échec.
-- **API** : `GET /api/printers`, `POST /api/print-jobs` (multipart), `GET /api/print-jobs` (`?all=1` pour les administrateurs), `GET /api/print-jobs/{id}`, `POST /api/print-jobs/{id}/cancel`, `POST /api/print-jobs/{id}/retry`, `GET /api/print-jobs/{id}/content`, `GET /api/print-jobs/settings`, et `/api/admin/printers` (CRUD, `check`, `test-page`). Les applications impriment au nom d'un utilisateur (`X-Impersonate-User`).
-- **Formats** : PDF, PostScript, PCL, JPEG, PNG et texte ; taille maximale `PRINT_MAX_FILE_SIZE` (50 Mo).
-- **Tableau de bord** : impressions et exemplaires sur 30 jours, taux de réussite, file d'impression, échecs, dernières impressions, impressions en échec dans l'activité. Les imprimantes actives sont vérifiées toutes les 5 minutes et apparaissent dans l'état des services.
-- **Démo** : un vrai serveur d'impression Samba (`docker/print-server`), une imprimante « dossier », des impressions d'Alice ; la CI imprime sur le serveur Samba de la démo.
-- **Socle commun Rocket**, partagé avec Rocket Mailer, Rocket Auth et Rocket Cloud : configuration initiale, comptes locaux, LDAP et SSO (OpenID Connect, Rocket Auth), serveurs d'authentification, applications externes et impersonation, tableau de bord extensible, sondes de santé, version et mises à jour (Docker, serveur sans Docker, manuelle), environnement de démo et Codespaces.
-
-### Corrigé
-
-- État des tâches de fond : un message différé (nouvelle tentative d'impression) n'est plus compté en retard avant son heure.
+- **Écrans** : lien secret `/s/<jeton>` (256 bits, seule l'empreinte est stockée, affiché une fois), nouveau lien, révocation, orientation (portrait pivoté sur une TV en paysage), fuseau horaire, langue des dates, activation, présence (dernière visite, navigateur, en ligne).
+- **Appairage** : un écran neuf ouvre `/pair` et affiche un code de 6 caractères (15 minutes) ; saisi dans **Écrans → Appairer un écran**, il relie l'écran à un nouvel écran ou à un écran existant, qui reçoit son lien une seule fois.
+- **Playlists** : panneaux avec durée, activation et programmation (jours, heures, plages de nuit) dans le fuseau de l'écran ; couleur d'accent, thème clair ou sombre ; duplication ; éditeur avec **aperçu en direct** (panneau sélectionné ou boucle actuelle, orientation, fuseau).
+- **Panneaux** : message d'accueil, horloge, météo (Open-Meteo, lue par le navigateur), Wi-Fi avec QR code de connexion, départ, image (`https://` ou Rocket Cloud), texte mis en forme, QR code, et panneaux **source**.
+- **Sources** branchables (`SourceTypeInterface`) : **Rocket PMS** (livret d'accueil par le lien « écran TV » : accueil au prénom du voyageur, voyageur présent, prochaine arrivée, Wi-Fi, départ, règlement, bonnes adresses, contacts ; relecture 30 minutes avant chaque arrivée), **Rocket Place** (valeurs domotiques d'un lieu, jeton d'application), **Web JSON** (valeurs par chemin, texte, en-tête Authorization). Cache par source, dernières données gardées en cas de panne, **Lire maintenant**.
+- **Identifiants des sources chiffrés en base** (libsodium, `ROCKET_SECRETS_KEY`), jamais renvoyés par l'API, derrière `SecretStoreInterface` pour le futur coffre de rocket-core.
+- **Kiosque** : plein écran, fondu entre panneaux, barre de progression, relecture chaque minute et à chaque changement de programmation (`reloadAt`), **hors ligne** avec le dernier contenu reçu, Wake Lock, rechargement quotidien.
+- **API publique** des écrans et de l'appairage : limitée par IP (120 requêtes par minute, 10 jetons invalides), `Cache-Control: no-store`, `X-Robots-Tag: noindex`.
+- **Tableau de bord** : écrans en ligne, playlists, sources en erreur, derniers écrans vus ; sources vérifiées toutes les 5 minutes (état des services).
+- **Démo** : trois sources servies par l'API elle-même, une playlist qui utilise tous les panneaux, un écran au lien connu ; scénarios vérifiés par la CI.
+- Socle rocket-core : comptes locaux, LDAP et SSO, mode suite (Rocket Auth, back-channel logout), applications (`rct_…`), mises à jour.

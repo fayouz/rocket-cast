@@ -1,86 +1,68 @@
 # Rocket Cast
 
-Impression vers les imprimantes de l'entreprise, depuis le navigateur ou depuis vos applications : partages **Windows / Samba**, imprimantes réseau et files **CUPS** en **IPP**, files d'impression asynchrones avec reprises et suivi. Brique du Middleware Rocket, sur la même stack que [Rocket Mailer](https://github.com/fayouz/rocket-mailer), [Rocket Auth](https://github.com/fayouz/rocket-auth) et [Rocket Cloud](https://github.com/fayouz/rocket-cloud).
+Affichage dynamique (digital signage) du Middleware Rocket : des **playlists** de panneaux diffusées sur les TV, écrans et tablettes de vos lieux, par un simple navigateur ouvert sur un lien secret. Panneaux d'accueil, horloge, météo, Wi-Fi, départ, image, texte, QR code, et **panneaux alimentés par des sources** : Rocket PMS (livret d'accueil, prénom du voyageur, prochaine arrivée), Rocket Place (valeurs domotiques), n'importe quelle API JSON.
 
-| Dossier | Stack |
+Construit sur [rocket-core](https://github.com/fayouz/rocket-core) (bundle Symfony `rocket/core-bundle` et layer Nuxt `@rocket/core`) : comptes, LDAP, SSO, applications, tableau de bord et mises à jour viennent du socle.
+
+| Dossier | Contenu |
 |---|---|
-| `backend/` | Symfony 8.1, API Platform 5, Doctrine ORM 3 (PostgreSQL), StofDoctrineExtensions, LexikJWT, Messenger et Scheduler, LDAP, `smbclient` |
-| `frontend/` | Nuxt 4, Nuxt UI 4 |
-| `docs/` | Site de documentation (Nuxt UI + Nuxt Content), avec le changelog sur `/changelog` : `cd docs && npm install && npm run dev`, puis http://localhost:3601 |
-| `docker/print-server/` | Serveur d'impression Samba de la démo |
+| `backend/` | API Symfony 8.1 + API Platform, PostgreSQL, worker Messenger/Scheduler |
+| `frontend/` | Nuxt 4 + Nuxt UI 4 : administration, kiosque `/s/<jeton>`, appairage `/pair` |
+| `docs/` | Documentation Nuxt Content (et changelog) |
+| `demo/`, `compose.demo.yaml` | Démo complète (Codespaces ou local) |
 
-Le socle commun (comptes, LDAP, SSO, applications, tableau de bord, mises à jour, modes autonome et suite) vient de **[rocket-core](https://github.com/fayouz/rocket-core)** : le bundle Symfony `rocket/core-bundle` (Composer) et le layer Nuxt `@rocket/core` (npm). Pour travailler sur les deux à la fois : `ROCKET_CORE_LAYER=../../rocket-core/nuxt npm run dev` côté front, et un dépôt `path` Composer côté backend.
-
-## Démarrage rapide
+## Démarrer
 
 ```bash
-docker compose up -d --build
+docker compose up -d --build        # http://localhost:3600 (API : 8600)
 ```
 
-Au premier lancement, http://localhost:3600 affiche la **configuration initiale** : on y crée le compte administrateur. Si l'instance est exposée avant d'être configurée, définissez `SETUP_TOKEN`. L'administrateur peut aussi être créé en ligne de commande : `docker compose exec api php bin/console app:user:create admin@example.org 'un-mot-de-passe-long' --admin`.
+La page **Configuration initiale** crée l'administrateur. Puis : **Sources** (intégrations), **Playlists**, **Écrans** → *Appairer un écran* avec le code affiché par `/pair` sur la TV.
 
-Déclarez ensuite les imprimantes dans **Administration → Imprimantes**.
+`docker compose -f compose.yaml -f compose.demo.yaml up -d --build` lance une démo complète : comptes locaux et LDAP, trois sources de démonstration servies par l'API, une playlist qui utilise tous les panneaux et l'écran http://localhost:3600/s/demo-screen-rocket-cast-0000000000000000000. Voir [demo/README.md](demo/README.md).
 
-- Application : http://localhost:3600
-- API + documentation OpenAPI : http://localhost:8600/api/docs
-
-### Démo prête à tester
-
-`docker compose -f compose.yaml -f compose.demo.yaml up -d --build` lance une démo complète : comptes locaux et LDAP, une imprimante « dossier », et un **vrai serveur d'impression Samba** sur lequel imprimer. Voir [demo/README.md](demo/README.md).
-
-### Développement sans Docker
+## Développement local
 
 ```bash
-# backend (PHP 8.4, PostgreSQL, smbclient pour le connecteur Samba)
-cd backend && composer install
-php bin/console lexik:jwt:generate-keypair
-php bin/console doctrine:migrations:migrate
-echo 'MESSENGER_TRANSPORT_DSN=sync://' >> .env.local   # ou lancer messenger:consume async scheduler_default
-php -S 127.0.0.1:8600 -t public
-php bin/phpunit
-
-# frontend
-cd frontend && npm install && npm run dev -- --port 3600   # NUXT_PUBLIC_API_BASE=http://localhost:8600
+docker run -d --name rocket-cast-db -e POSTGRES_USER=app -e POSTGRES_PASSWORD=app -e POSTGRES_DB=app -p 127.0.0.1:55438:5432 postgres:16-alpine
+cd backend
+echo 'DATABASE_URL="postgresql://app:app@127.0.0.1:55438/app?serverVersion=16&charset=utf8"' > .env.local
+cp .env.local .env.test.local
+echo "ROCKET_SECRETS_KEY=$(openssl rand -hex 32)" >> .env.local
+composer install && php bin/console lexik:jwt:generate-keypair --skip-if-exists
+php bin/console doctrine:migrations:migrate -n && php bin/console app:demo:seed   # avec DEMO_MODE=1 dans .env.local pour les sources de démo
+PHP_CLI_SERVER_WORKERS=4 php -S 127.0.0.1:8600 -t public
+cd ../frontend && npm install && NUXT_PUBLIC_API_BASE=http://localhost:8600 npm run dev -- --port 3600
 ```
 
-## Fonctionnalités
+`PHP_CLI_SERVER_WORKERS` : les sources de démo sont servies par l'API elle-même.
 
-### Imprimantes et connecteurs
-Administration → **Imprimantes** : nom, emplacement, recto verso, couleur, imprimante par défaut, activation, et un connecteur :
+## Domaine
 
-| Connecteur | Adresse | Principe |
-|---|---|---|
-| Partage Windows / Samba | `//serveur/imprimante` (`smb://…`, `\\serveur\imprimante`) | `smbclient … -c 'print …'`, compte de service et domaine. Le document est transmis tel quel (PDF, PostScript ou PCL selon l'imprimante). |
-| IPP / CUPS | `ipp://imprimante/ipp/print`, `ipps://…`, `ipp://cups:631/printers/file` | Print-Job IPP/2.0 avec exemplaires, recto verso et couleur ; état et modèle par Get-Printer-Attributes. |
-| Dossier | `tests` (sous `PRINT_FOLDER_ROOT`) | Écrit le document et un `.json` de ses options : tests, démo, archivage. |
+- **Écrans** : jeton de 256 bits (empreinte SHA-256 seule en base, lien affiché une fois), nouveau lien, révocation, appairage par code (`/pair`), orientation (portrait pivoté sur une TV en paysage), fuseau horaire, langue, présence (`lastSeenAt`, en ligne si vu depuis 3 minutes).
+- **Playlists** : panneaux JSON validés (`App\Cast\Panels`) avec durée, activation et programmation (jours, heures, nuit) dans le fuseau de l'écran ; éditeur avec aperçu en direct (`POST /api/playlists/preview`).
+- **Sources** : intégrations branchables (`App\Source\SourceTypeInterface`, tag `cast.source_type`) avec leurs vues, leurs champs et un cache (`refreshSeconds`, `reloadAt`) ; les dernières données sont gardées en cas de panne. Identifiants **chiffrés en base** (`App\Secret\SecretStoreInterface`, libsodium, `ROCKET_SECRETS_KEY`), jamais dans `.env`, jamais renvoyés.
+- **Kiosque** `/s/<jeton>` : plein écran, boucle avec fondu, relecture chaque minute et à `reloadAt`, dernier contenu gardé hors ligne, Wake Lock ; API publique `GET /api/public/screens/{jeton}` limitée par IP, `no-store`, `noindex`.
+- **Tableau de bord** : écrans en ligne, playlists, sources en erreur ; les sources sont vérifiées toutes les 5 minutes (état des services).
 
-**Tester la connexion** (sans imprimer) et **Imprimer une page de test** (PDF généré). Les mots de passe sont chiffrés en base (`SECRETS_ENCRYPTION_KEY`), jamais renvoyés par l'API, et passés à `smbclient` par un fichier temporaire `0600`, jamais en ligne de commande. Les imprimantes actives sont vérifiées toutes les 5 minutes (état des services du tableau de bord).
+Contrat de la source Rocket PMS : [docs/content/4.api/3.rocket-pms.md](docs/content/4.api/3.rocket-pms.md).
 
-### Impression et files d'attente
-- **Imprimer** : glisser-déposer, imprimante (par défaut présélectionnée), exemplaires, recto verso, couleur. Formats : PDF, PostScript, PCL, JPEG, PNG, texte ; `PRINT_MAX_FILE_SIZE` (50 Mo).
-- Le **worker** envoie les documents. Échec passager : nouvelle tentative 1 puis 5 minutes plus tard (3 au total) ; échec définitif (identifiants, format refusé) : arrêt immédiat avec l'erreur.
-- **Mes impressions** : statut en direct, recherche, filtres, voir le document, annuler (en attente), réimprimer (échec ou annulé). Les administrateurs voient **Toutes les impressions**.
-- Documents supprimés après `PRINT_RETENTION_DAYS` jours (7) ; l'historique reste.
+## Variables propres à Rocket Cast
 
-### API pour les applications
-```bash
-curl -X POST https://print.exemple.com/api/print-jobs \
-  -H "Authorization: Bearer rct_…" -H "X-Impersonate-User: alice@exemple.com" -H "Accept: application/json" \
-  -F file=@facture.pdf -F printer=<id> -F copies=2 -F duplex=1
-```
-`GET /api/printers`, `GET /api/print-jobs[/{id}]`, `POST /api/print-jobs/{id}/cancel|retry`, `GET /api/print-jobs/{id}/content`, et pour les administrateurs `/api/admin/printers` (CRUD, `check`, `test-page`). Voir `docs/content/4.api/2.print-jobs.md`.
+| Variable | Rôle |
+|---|---|
+| `ROCKET_SECRETS_KEY` | Clé maîtresse des identifiants des sources (`openssl rand -hex 32`) ; vide : dérivée de `APP_SECRET` (développement) |
+| `CAST_SOURCE_TIMEOUT` | Délai des requêtes aux sources (s), 5 |
+| `CAST_CLOUD_URL` | Origine Rocket Cloud acceptée par les panneaux image, en plus de `https://` |
+| `FRONTEND_URL` | Adresse du front, pour les liens d'écran |
+| `DEMO_SCREEN_TOKEN`, `DEMO_SOURCE_BASE_URL` | Démo : jeton connu de l'écran, adresse de l'API vue par elle-même |
 
-### Socle commun Rocket (rocket-core)
-- **Comptes** locaux, **LDAP** (synchronisation, rôle admin par groupe) et **SSO OpenID Connect** (Rocket Auth ou tout fournisseur).
-- **Applications externes** : jeton `rct_…` (seul son hash est stocké) et impersonation par `X-Impersonate-User`, jamais avec le rôle administrateur.
-- **Tableau de bord** : impressions, taux de réussite, file, échecs, état des services (base, tâches de fond, LDAP, SSO, imprimantes, stockage).
-- **Version et mises à jour** : Docker (Watchtower, profil `updater`), serveur sans Docker (`deploy/update.sh`) ou manuelle.
-- **Traçabilité** : toutes les entités sont Timestampable et Blameable.
+Les autres variables (base, JWT, LDAP, suite Rocket, mises à jour) sont celles du socle : voir [docs/content/1.getting-started/2.installation.md](docs/content/1.getting-started/2.installation.md).
 
 ## CI/CD
 
-`.github/workflows/ci.yml` :
-- à chaque push et pull request : lint du container, validation du schéma Doctrine, PHPUnit, puis ESLint, typecheck et build du front et de la documentation ; la démo complète est lancée et on y imprime sur le serveur Samba ;
+`.github/workflows/ci.yml` appelle les workflows réutilisables de rocket-core :
+- à chaque push et pull request : lint du container, validation du schéma Doctrine, PHPUnit, puis ESLint, typecheck et build du front et de la documentation ; la démo complète est lancée et ses scénarios vérifiés (`.github/demo-scenarios.sh`) ;
 - sur `main`, `develop` et les tags `v*` : images `ghcr.io/fayouz/rocket-cast-api` et `ghcr.io/fayouz/rocket-cast-front`.
 
 Le worker utilise l'image API avec `php bin/console messenger:consume async scheduler_default`.

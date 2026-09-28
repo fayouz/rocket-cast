@@ -26,37 +26,12 @@ Le service `demo-seed` prépare la base, charge les données de démo et synchro
 | http://localhost:3601 | Documentation, et le changelog sur `/changelog` |
 | http://localhost:8600/api/docs | Documentation de l'API |
 
-Le service `print-server` est un vrai serveur d'impression **Samba** : ce qu'on imprime sur « Laser 2e étage (Samba) » arrive dans son dossier `/printed` au lieu de sortir sur papier.
+Les trois sources de la démo (Rocket PMS, Rocket Place, Web JSON) sont servies par l'API elle-même (`/demo/…`, uniquement avec `DEMO_MODE=1`) : aucun accès au réseau n'est nécessaire, sauf pour la météo et l'image, lues par le navigateur.
 
-## Comptes
+## Scénarios
 
-| Compte | Mot de passe | Type |
-|---|---|---|
-| `admin@example.org` | `demo-admin-password` | local, administrateur |
-| `alice@example.org` | `demo-alice-password` | local |
-| `marie.martin@example.org` | `password` | LDAP, administratrice via le groupe `rocket-admins` |
-| `jean.dupont@example.org` | `password` | LDAP |
-
-## Scénarios à tester
-
-1. **Imprimer.** Connecte-toi avec `alice@example.org`, ouvre *Imprimer*, dépose un PDF, choisis « Laser 2e étage (Samba) » et 2 exemplaires. Dans *Mes impressions*, le document passe en « Imprimé ». Vérifie qu'il est arrivé :
-   ```bash
-   docker compose -f compose.yaml -f compose.demo.yaml exec print-server ls -l /printed
-   ```
-2. **Panne et reprise.** `docker compose -f compose.yaml -f compose.demo.yaml stop print-server`, puis imprime : le document attend entre les tentatives (1 puis 5 minutes), puis passe en « Échec ». Redémarre le serveur (`start print-server`) et clique sur *Réimprimer*. Le tableau de bord de l'admin montre l'imprimante en échec pendant la panne.
-3. **Administration.** Avec `admin@example.org`, ouvre *Administration → Imprimantes* : *Tester la connexion*, *Imprimer une page de test*, ajoute une imprimante (Samba, IPP ou dossier).
-4. **Application et impersonation.** Une application imprime au nom d'Alice :
-   ```bash
-   curl -X POST http://localhost:3600/api/print-jobs \
-     -H "Authorization: Bearer rct_demo_rocket_cast_do_not_use_in_production" \
-     -H "X-Impersonate-User: alice@example.org" -H "Accept: application/json" \
-     -F file=@document.pdf
-   ```
-   Le document apparaît dans *Mes impressions* d'Alice, avec le nom de l'application. En impersonnant `admin@example.org`, l'application n'obtient pas pour autant les droits administrateur.
-5. **Connexion LDAP.** Connecte-toi avec `marie.martin@example.org` / `password` : elle est administratrice grâce à son groupe LDAP.
-
-## Réinitialiser
-
-```bash
-docker compose -f compose.yaml -f compose.demo.yaml down -v
-```
+1. **L'écran.** Ouvre http://localhost:3600/s/demo-screen-rocket-cast-0000000000000000000 : accueil au prénom de Camille, horloge, météo, Wi-Fi avec QR code, prochaine arrivée, départ, capteurs, infos du bureau, texte, QR code, image.
+2. **Hors ligne.** `docker compose -f compose.yaml -f compose.demo.yaml stop api` : l'écran continue avec le dernier contenu et affiche « Hors ligne » ; `start api` et il reprend.
+3. **Éditeur.** Connecte-toi (`alice@example.org` / `demo-alice-password`), *Playlists → Accueil voyageurs (démo)* : sélectionne un panneau, modifie-le, vois l'aperçu, enregistre ; l'écran suit dans la minute.
+4. **Appairage.** Ouvre http://localhost:3600/pair?new dans un autre onglet, puis *Écrans → Appairer un écran* avec le code affiché.
+5. **Sources.** Avec `admin@example.org` / `demo-admin-password`, *Sources* : *Lire maintenant*, dernières données.

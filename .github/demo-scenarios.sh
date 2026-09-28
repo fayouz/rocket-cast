@@ -34,21 +34,26 @@ curl -fsS $FRONT/api/dashboard -H "Authorization: Bearer $TOKEN" \
 DEMO_TOKEN=$(grep -o 'rct_demo_[a-z_]*' compose.demo.yaml | head -1)
 curl -fsS $FRONT/api/me -H "Authorization: Bearer $DEMO_TOKEN" -H 'X-Impersonate-User: admin@example.org' \
   | jq -e '.user.email == "admin@example.org" and (.roles | index("ROLE_ADMIN") | not)'
-# Printing: the demo printers, a document printed by the worker on the Samba print server
-curl -fsS $FRONT/api/printers -H "Authorization: Bearer $ALICE" -H "Accept: application/json" | jq -e '[.[].name] | index("Laser 2e étage (Samba)") and index("Accueil (dossier de démo)")'
-SAMBA=$(curl -fsS $FRONT/api/printers -H "Authorization: Bearer $ALICE" -H "Accept: application/json" | jq -r '.[] | select(.name == "Laser 2e étage (Samba)") | .id')
-curl -fsS -X POST $FRONT/api/admin/printers/$SAMBA/check -H "Authorization: Bearer $TOKEN" | jq -e '.ok'
-printf '%%PDF-1.4\n1 0 obj << /Type /Catalog >> endobj\ntrailer << /Root 1 0 R >>\n%%%%EOF\n' > ci.pdf
-JOB=$(curl -fsS -X POST $FRONT/api/print-jobs -H "Authorization: Bearer $ALICE" -H 'Accept: application/json' \
-  -F file=@ci.pdf -F printer=$SAMBA -F copies=2 | jq -r .id)
-for i in $(seq 1 30); do
-  STATUS=$(curl -fsS $FRONT/api/print-jobs/$JOB -H "Authorization: Bearer $ALICE" | jq -r .status)
-  [ "$STATUS" = printed ] && break; [ "$STATUS" = failed ] && break; sleep 2
-done
-curl -fsS $FRONT/api/print-jobs/$JOB -H "Authorization: Bearer $ALICE" | jq -e '.status == "printed"'
-test "$($COMPOSE exec -T print-server sh -c 'ls /printed | wc -l')" -ge 2
-# The demo application prints on behalf of a user
-curl -fsS -X POST $FRONT/api/print-jobs -H "Authorization: Bearer $DEMO_TOKEN" -H 'X-Impersonate-User: alice@example.org' -H 'Accept: application/json' \
-  -F file=@ci.pdf | jq -e '.applicationName != null and .ownerEmail == "alice@example.org"'
+# Rocket Cast: the demo screen shows its playlist, source panels filled by the demo sources (Rocket PMS, Place, Web JSON)
+SCREEN=$(grep -o 'DEMO_SCREEN_TOKEN: [A-Za-z0-9_-]*' compose.demo.yaml | cut -d' ' -f2)
+curl -fsS -D headers.txt $FRONT/api/public/screens/$SCREEN > kiosk.json
+grep -qi 'cache-control: no-store' headers.txt
+grep -qi 'x-robots-tag: noindex' headers.txt
+jq -e '.screen.name == "TV du salon (démo)" and (.panels | length) >= 8' kiosk.json || { jq . kiosk.json; exit 1; }
+jq -e '[.panels[] | select(.settings.view == "welcome") | .data.firstName] == ["Camille"]' kiosk.json
+jq -e '[.panels[] | select(.settings.view == "items") | .data.items | length] | all(. > 0)' kiosk.json
+curl -fsS $FRONT/s/$SCREEN > /dev/null
+# The screens heartbeat, sources and playlists (a user); sources are managed by administrators
+curl -fsS $FRONT/api/screens -H "Authorization: Bearer $ALICE" | jq -e '[.[] | select(.name == "TV du salon (démo)") | .online] == [true]'
+curl -fsS $FRONT/api/sources -H "Authorization: Bearer $ALICE" | jq -e 'length == 3 and all(.lastError == null) and (.[0] | has("config") | not)'
+SOURCE=$(curl -fsS $FRONT/api/sources -H "Authorization: Bearer $TOKEN" | jq -r '.[] | select(.type == "rocket_pms") | .id')
+curl -fsS -X POST $FRONT/api/sources/$SOURCE/test -H "Authorization: Bearer $TOKEN" | jq -e '.ok and .payload.guest.firstName == "Camille"'
+# Pairing a fresh screen: code, pairing by a user, token delivered once
+PAIRING=$(curl -fsS -X POST $FRONT/api/public/pairings)
+CODE=$(echo "$PAIRING" | jq -r .code); SECRET=$(echo "$PAIRING" | jq -r .secret)
+curl -fsS -X POST $FRONT/api/screens/pair -H "Authorization: Bearer $ALICE" -H 'Content-Type: application/json' -d "{\"code\":\"$CODE\",\"name\":\"CI\"}" | jq -e '.name == "CI"'
+PAIRED=$(curl -fsS -X POST $FRONT/api/public/pairings/poll -H 'Content-Type: application/json' -d "{\"secret\":\"$SECRET\"}" | jq -r .token)
+curl -fsS $FRONT/api/public/screens/$PAIRED | jq -e '.screen.name == "CI"'
+# The worker checks the sources (dashboard health)
 curl -fsS -X POST $FRONT/api/health/check -H "Authorization: Bearer $TOKEN" \
-  | jq -e '[.services[] | select(.id == "printers") | .status] == ["operational"]'
+  | jq -e '[.services[] | select(.id == "sources") | .status] == ["operational"]'
