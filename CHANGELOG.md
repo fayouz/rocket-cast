@@ -2,7 +2,7 @@
 
 Toutes les évolutions notables de Rocket Cast. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et le projet respecte le [versionnage sémantique](https://semver.org/lang/fr/).
 
-## [Non publié]
+## [0.3.0] - 2026-09-28
 
 ### Modifié
 - **Identifiants des sources dans le coffre de rocket-core** (0.3.1, Administration → Secrets) : `SecretStoreInterface` est implémentée par `VaultSecretStore` (secret `cast.credentials.<aléatoire>`, référence `vault:<nom>` en base, supprimé quand la source ou l'appairage disparaît) au lieu du chiffrement libsodium propre. `ROCKET_SECRETS_KEY` devient la clé du coffre (base64 de 32 octets, `rocket:secrets:generate-key`) ; jamais de valeur renvoyée par l'API.
