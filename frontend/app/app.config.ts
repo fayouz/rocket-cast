@@ -10,27 +10,29 @@ export default defineAppConfig({
     },
   },
   rocket: {
-    id: 'print',
+    id: 'cast',
     name: 'Rocket Cast',
-    icon: 'i-lucide-printer',
+    icon: 'i-lucide-cast',
     // Login page subtitle.
-    tagline: 'Imprimez sur les imprimantes de l’entreprise, depuis le navigateur ou vos applications.',
+    tagline: 'Diffusez vos playlists sur les écrans, TV et tablettes de vos lieux.',
+    // Kiosk (/s/<token>) and pairing (/pair) pages: opened by the screens, without account.
+    publicPaths: ['/s/', '/pair'],
     // Main menu: the domain pages ("label" entries start a group).
     navigation: [
-      { label: 'Impression', type: 'label' },
-      { label: 'Imprimer', icon: 'i-lucide-printer', to: '/print' },
-      { label: 'Mes impressions', icon: 'i-lucide-list', to: '/jobs', exactQuery: true },
+      { label: 'Affichage', type: 'label' },
+      { label: 'Écrans', icon: 'i-lucide-monitor', to: '/screens' },
+      { label: 'Playlists', icon: 'i-lucide-list-video', to: '/playlists' },
+      { label: 'Sources', icon: 'i-lucide-plug', to: '/sources' },
     ] as { label: string, icon?: string, to?: string, type?: 'label', exact?: boolean, exactQuery?: boolean, admin?: boolean }[],
     // Extra entries of the Administration menu.
-    adminNavigation: [
-      { label: 'Imprimantes', icon: 'i-lucide-printer-check', to: '/printers' },
-      { label: 'Toutes les impressions', icon: 'i-lucide-list-checks', to: '/jobs?all=1', exactQuery: true },
-    ] as { label: string, icon: string, to: string, exactQuery?: boolean }[],
+    adminNavigation: [] as { label: string, icon: string, to: string, exactQuery?: boolean }[],
     // "Services & raccourcis" of the dashboard, besides the documentation, changelog and API.
-    shortcuts: [] as { label: string, description: string, icon: string, to: string, admin?: boolean }[],
+    shortcuts: [
+      { label: 'Appairer un écran', description: 'Ouvrez /pair sur la TV, puis saisissez le code affiché.', icon: 'i-lucide-link', to: '/screens?pair=1' },
+    ] as { label: string, description: string, icon: string, to: string, admin?: boolean }[],
     // Hero banner of the dashboard: one quote per day.
     quotes: [
-      ['Les paroles s’envolent, les écrits restent.', 'Proverbe latin'],
+      ['Une image vaut mille mots.', 'Proverbe'],
       ['La simplicité est la sophistication suprême.', 'Léonard de Vinci'],
       ['Ce qui se conçoit bien s’énonce clairement.', 'Nicolas Boileau'],
     ] as [string, string][],

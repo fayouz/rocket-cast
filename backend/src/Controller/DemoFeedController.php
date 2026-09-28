@@ -23,7 +23,7 @@ final class DemoFeedController extends AbstractController
     ) {
     }
 
-    #[Route('/api/public/demo/pms/api/public/tv/{token}', name: 'api_demo_pms_tv', methods: ['GET'])]
+    #[Route('/demo/pms/api/public/tv/{token}', name: 'api_demo_pms_tv', methods: ['GET'])]
     public function pms(string $token): JsonResponse
     {
         $this->guard();
@@ -54,7 +54,7 @@ final class DemoFeedController extends AbstractController
         ]);
     }
 
-    #[Route('/api/public/demo/place/api/places/{id}/domotique', name: 'api_demo_place_domotique', methods: ['GET'])]
+    #[Route('/demo/place/api/places/{id}/domotique', name: 'api_demo_place_domotique', methods: ['GET'])]
     public function place(string $id): JsonResponse
     {
         $this->guard();
@@ -71,7 +71,7 @@ final class DemoFeedController extends AbstractController
         ]]]);
     }
 
-    #[Route('/api/public/demo/json', name: 'api_demo_json', methods: ['GET'])]
+    #[Route('/demo/json', name: 'api_demo_json', methods: ['GET'])]
     public function feed(): JsonResponse
     {
         $this->guard();

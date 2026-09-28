@@ -37,7 +37,7 @@ final class CastDemoSeeder implements DemoSeederInterface
         if (null !== $this->playlists->findOneBy(['name' => self::PLAYLIST])) {
             return;
         }
-        $base = rtrim($this->sourceBaseUrl ?: 'http://localhost:8600', '/').'/api/public/demo';
+        $base = rtrim($this->sourceBaseUrl ?: 'http://localhost:8600', '/').'/demo';
         $pms = $this->source('Loft du Vieux-Port (Rocket PMS)', 'rocket_pms', ['baseUrl' => $base.'/pms', 'lang' => 'fr'], ['tvToken' => DemoFeedController::TV_TOKEN], 300);
         $place = $this->source('Capteurs du salon (Rocket Place)', 'rocket_place', [
             'baseUrl' => $base.'/place', 'placeId' => '01990000-0000-7000-8000-000000000001', 'impersonate' => '', 'filter' => '',

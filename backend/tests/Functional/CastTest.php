@@ -385,12 +385,12 @@ final class CastTest extends WebTestCase
         self::assertSame(2, $this->em()->getRepository(Screen::class)->count([]));
 
         // The demo feeds answer like the real services
-        $tv = $this->api('GET', '/api/public/demo/pms/api/public/tv/'.\App\Controller\DemoFeedController::TV_TOKEN);
+        $tv = $this->api('GET', '/demo/pms/api/public/tv/'.\App\Controller\DemoFeedController::TV_TOKEN);
         $this->assertStatus(200);
         self::assertSame('Camille', \App\Source\Type\RocketPmsSource::normalise($tv)['guest']['firstName']);
-        $place = $this->api('GET', '/api/public/demo/place/api/places/x/domotique');
+        $place = $this->api('GET', '/demo/place/api/places/x/domotique');
         self::assertCount(4, \App\Source\Type\RocketPlaceSource::normalise($place)['items']);
-        $this->api('GET', '/api/public/demo/json');
+        $this->api('GET', '/demo/json');
         $this->assertStatus(200);
     }
 }
