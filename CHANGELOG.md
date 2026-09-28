@@ -2,7 +2,11 @@
 
 Toutes les évolutions notables de Rocket Cast. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et le projet respecte le [versionnage sémantique](https://semver.org/lang/fr/).
 
-## [Non publié]
+## [0.2.0] - 2026-09-28
+
+### Ajouté
+
+- **Lieu d'un écran** : `placeId` (lieu Rocket Place, facultatif) et `placeName` (nom en cache), modifiables dans **Écrans** ; filtre `GET /api/screens?place=<uuid>`. L'écran de démo est rattaché au lieu de démo « Le port » (`0192f7c4-0000-7000-8000-000000000001`), qui sert aussi à la source Rocket Place de démo.
 
 ## [0.1.0] - 2026-09-28
 

@@ -24,6 +24,8 @@ final class CastViews
             'id' => $s->getId()->toRfc4122(),
             'name' => $s->getName(),
             'location' => $s->getLocation(),
+            'placeId' => $s->getPlaceId(),
+            'placeName' => $s->getPlaceName(),
             'orientation' => $s->getOrientation(),
             'timezone' => $s->getTimezone(),
             'locale' => $s->getLocale(),

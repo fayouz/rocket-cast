@@ -74,7 +74,7 @@ const columns: TableColumn<Screen>[] = [
         row.original.name,
         row.original.orientation === 'portrait' && h(UBadge, { label: 'Portrait', color: 'neutral', variant: 'subtle', size: 'sm' }),
       ]),
-      h('p', { class: 'text-xs text-muted' }, [row.original.location, row.original.timezone].filter(Boolean).join(' · ')),
+      h('p', { class: 'text-xs text-muted' }, [row.original.placeName, row.original.location, row.original.timezone].filter(Boolean).join(' · ')),
     ]),
   },
   {
@@ -126,7 +126,7 @@ const columns: TableColumn<Screen>[] = [
 // Create / edit
 const formOpen = ref(false)
 const editing = ref<Screen | null>(null)
-const empty = () => ({ name: '', location: '', orientation: 'landscape' as Screen['orientation'], timezone: 'Europe/Paris', locale: 'fr-FR', playlistId: '', enabled: true })
+const empty = () => ({ name: '', location: '', placeId: '', placeName: '', orientation: 'landscape' as Screen['orientation'], timezone: 'Europe/Paris', locale: 'fr-FR', playlistId: '', enabled: true })
 const form = reactive(empty())
 const timezones = computed(() => {
   const all = typeof Intl.supportedValuesOf === 'function' ? Intl.supportedValuesOf('timeZone') : TIMEZONES
@@ -142,14 +142,14 @@ function create() {
 function edit(screen: Screen) {
   editing.value = screen
   Object.assign(form, {
-    name: screen.name, location: screen.location ?? '', orientation: screen.orientation, timezone: screen.timezone,
+    name: screen.name, location: screen.location ?? '', placeId: screen.placeId ?? '', placeName: screen.placeName ?? '', orientation: screen.orientation, timezone: screen.timezone,
     locale: screen.locale, playlistId: screen.playlist?.id ?? '', enabled: screen.enabled,
   })
   formOpen.value = true
 }
 
 async function submit() {
-  const body = { ...form, location: form.location || null, playlistId: form.playlistId || null }
+  const body = { ...form, location: form.location || null, placeId: form.placeId.trim() || null, placeName: form.placeName.trim() || null, playlistId: form.playlistId || null }
   if (editing.value) {
     if (await patch(editing.value, body)) {
       formOpen.value = false
@@ -243,6 +243,12 @@ async function remove() {
             </UFormField>
             <UFormField label="Emplacement">
               <UInput v-model="form.location" class="w-full" placeholder="Accueil, rez-de-chaussée" />
+            </UFormField>
+            <UFormField label="Lieu Rocket Place (identifiant)" help="Facultatif : UUID du lieu, pour retrouver l'écran depuis Rocket Host.">
+              <UInput v-model="form.placeId" class="w-full font-mono" placeholder="0192f7c4-…" />
+            </UFormField>
+            <UFormField label="Nom du lieu">
+              <UInput v-model="form.placeName" class="w-full" placeholder="Le port" :disabled="!form.placeId.trim()" />
             </UFormField>
             <UFormField label="Playlist" class="sm:col-span-2">
               <USelect v-model="form.playlistId" :items="playlistItems" class="w-full" />

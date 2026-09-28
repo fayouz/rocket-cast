@@ -41,11 +41,19 @@ final class ScreenController extends AbstractController
     }
 
     #[Route('/api/screens', name: 'api_screens', methods: ['GET'])]
-    public function list(): JsonResponse
+    public function list(Request $request): JsonResponse
     {
         $now = $this->clock->now();
+        $criteria = [];
+        $place = $request->query->get('place');
+        if (null !== $place && '' !== $place) {
+            if (!Uuid::isValid($place)) {
+                throw new UnprocessableEntityHttpException('place : UUID du lieu Rocket Place attendu.');
+            }
+            $criteria['placeId'] = strtolower($place);
+        }
 
-        return $this->json(array_map(fn (Screen $s) => $this->views->screen($s, $now), $this->screens->findBy([], ['name' => 'ASC'])));
+        return $this->json(array_map(fn (Screen $s) => $this->views->screen($s, $now), $this->screens->findBy($criteria, ['name' => 'ASC'])));
     }
 
     #[Route('/api/screens/{id}', name: 'api_screen', methods: ['GET'], requirements: ['id' => Requirement::UUID])]
@@ -146,6 +154,22 @@ final class ScreenController extends AbstractController
         }
         if (\array_key_exists('location', $data)) {
             $screen->setLocation(null === $data['location'] ? null : mb_substr((string) $data['location'], 0, 255));
+        }
+        if (\array_key_exists('placeId', $data)) {
+            $placeId = $data['placeId'];
+            if (null !== $placeId && '' !== $placeId && (!\is_string($placeId) || !Uuid::isValid($placeId))) {
+                throw new UnprocessableEntityHttpException('Lieu : UUID du lieu Rocket Place attendu.');
+            }
+            $placeName = $data['placeName'] ?? $screen->getPlaceName();
+            if (null !== $placeName && (!\is_string($placeName) || mb_strlen(trim($placeName)) > 120)) {
+                throw new UnprocessableEntityHttpException('Nom du lieu : 120 caractères au plus.');
+            }
+            $screen->setPlace($placeId, $placeName);
+        } elseif (\array_key_exists('placeName', $data) && null !== $screen->getPlaceId()) {
+            if (null !== $data['placeName'] && (!\is_string($data['placeName']) || mb_strlen(trim($data['placeName'])) > 120)) {
+                throw new UnprocessableEntityHttpException('Nom du lieu : 120 caractères au plus.');
+            }
+            $screen->setPlace($screen->getPlaceId(), $data['placeName']);
         }
         if (\array_key_exists('orientation', $data)) {
             if (!\in_array($data['orientation'], Screen::ORIENTATIONS, true)) {
