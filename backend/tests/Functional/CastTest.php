@@ -117,6 +117,33 @@ final class CastTest extends WebTestCase
         self::assertFalse($this->api('GET', '/api/screens/'.$screen['id'], authorization: $this->user)['hasToken']);
     }
 
+    public function testScreensCanBeLinkedToARocketPlacePlace(): void
+    {
+        $port = '0192f7c4-0000-7000-8000-000000000001';
+        $linked = $this->api('POST', '/api/screens', ['name' => 'TV du port', 'placeId' => strtoupper($port), 'placeName' => ' Le port '], $this->user);
+        $this->assertStatus(201);
+        self::assertSame($port, $linked['placeId']);
+        self::assertSame('Le port', $linked['placeName']);
+        $other = $this->api('POST', '/api/screens', ['name' => 'Tablette'], $this->user);
+        self::assertNull($other['placeId']);
+        self::assertNull($other['placeName']);
+
+        $this->api('POST', '/api/screens', ['name' => 'X', 'placeId' => 'pas-un-uuid'], $this->user);
+        $this->assertStatus(422);
+        $this->api('GET', '/api/screens?place=pas-un-uuid', authorization: $this->user);
+        $this->assertStatus(422);
+
+        self::assertSame(['TV du port'], array_column($this->api('GET', '/api/screens?place='.$port, authorization: $this->user), 'name'));
+        self::assertCount(2, $this->api('GET', '/api/screens?place=', authorization: $this->user));
+
+        // Renaming the cached place name alone, then unlinking (the name goes too)
+        self::assertSame('Le Port (quai)', $this->api('PATCH', '/api/screens/'.$linked['id'], ['placeName' => 'Le Port (quai)'], $this->user)['placeName']);
+        $unlinked = $this->api('PATCH', '/api/screens/'.$linked['id'], ['placeId' => null], $this->user);
+        self::assertNull($unlinked['placeId']);
+        self::assertNull($unlinked['placeName']);
+        self::assertSame([], $this->api('GET', '/api/screens?place='.$port, authorization: $this->user));
+    }
+
     public function testInvalidTokensAreRateLimited(): void
     {
         for ($i = 0; $i < 10; ++$i) {
@@ -383,6 +410,8 @@ final class CastTest extends WebTestCase
         $seeder->seed($users, $io);
         self::assertSame(3, $this->em()->getRepository(Source::class)->count([]));
         self::assertSame(2, $this->em()->getRepository(Screen::class)->count([]));
+        $demo = $this->api('GET', '/api/screens?place='.\App\Command\CastDemoSeeder::DEMO_PLACE, authorization: $this->user);
+        self::assertSame([['TV du salon (démo)', 'Le port']], array_map(fn ($s) => [$s['name'], $s['placeName']], $demo));
 
         // The demo feeds answer like the real services
         $tv = $this->api('GET', '/demo/pms/api/public/tv/'.\App\Controller\DemoFeedController::TV_TOKEN);

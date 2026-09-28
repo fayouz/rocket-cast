@@ -40,6 +40,10 @@ export interface Screen extends Tracking {
   id: string
   name: string
   location: string | null
+  /** Rocket Place place the screen stands in (optional). */
+  placeId: string | null
+  /** Cached name of that place. */
+  placeName: string | null
   orientation: 'landscape' | 'portrait'
   timezone: string
   locale: string

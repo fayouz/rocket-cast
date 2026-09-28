@@ -21,6 +21,10 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
 final class CastDemoSeeder implements DemoSeederInterface
 {
     public const PLAYLIST = 'Accueil voyageurs (démo)';
+    public const DEMO_SCREEN = 'TV du salon (démo)';
+    /** Demo place "Le port" of Rocket Place (fixed id shared by every Rocket demo). */
+    public const DEMO_PLACE = '0192f7c4-0000-7000-8000-000000000001';
+    public const DEMO_PLACE_NAME = 'Le port';
 
     public function __construct(
         private readonly EntityManagerInterface $em,
@@ -35,12 +39,15 @@ final class CastDemoSeeder implements DemoSeederInterface
     public function seed(array $users, SymfonyStyle $io): void
     {
         if (null !== $this->playlists->findOneBy(['name' => self::PLAYLIST])) {
+            $this->linkDemoScreen();
+            $this->em->flush();
+
             return;
         }
         $base = rtrim($this->sourceBaseUrl ?: 'http://localhost:8600', '/').'/demo';
         $pms = $this->source('Loft du Vieux-Port (Rocket PMS)', 'rocket_pms', ['baseUrl' => $base.'/pms', 'lang' => 'fr'], ['tvToken' => DemoFeedController::TV_TOKEN], 300);
         $place = $this->source('Capteurs du salon (Rocket Place)', 'rocket_place', [
-            'baseUrl' => $base.'/place', 'placeId' => '01990000-0000-7000-8000-000000000001', 'impersonate' => '', 'filter' => '',
+            'baseUrl' => $base.'/place', 'placeId' => self::DEMO_PLACE, 'impersonate' => '', 'filter' => '',
         ], ['token' => 'rpl_demo_rocket_place_do_not_use_in_production'], 60);
         $json = $this->source('Infos bureau (Web JSON)', 'web_json', [
             'url' => $base.'/json', 'title' => 'Aujourd’hui au bureau',
@@ -72,7 +79,7 @@ final class CastDemoSeeder implements DemoSeederInterface
             ]));
         $this->em->persist($playlist);
 
-        $hall = (new Screen())->setName('TV du salon (démo)')->setLocation('Loft du Vieux-Port')->setPlaylist($playlist)->setTimezone('Europe/Paris');
+        $hall = (new Screen())->setName(self::DEMO_SCREEN)->setLocation('Loft du Vieux-Port')->setPlace(self::DEMO_PLACE, self::DEMO_PLACE_NAME)->setPlaylist($playlist)->setTimezone('Europe/Paris');
         if (null !== $this->screenToken && preg_match('/^[A-Za-z0-9_-]{43}$/', $this->screenToken)) {
             $hall->useToken($this->screenToken);
         } else {
@@ -83,6 +90,15 @@ final class CastDemoSeeder implements DemoSeederInterface
         $this->em->flush();
 
         $io->text('Rocket Cast : 3 sources, 1 playlist, 2 écrans'.(null !== $this->screenToken ? ' (écran de démo : /s/'.$this->screenToken.')' : '').'.');
+    }
+
+    /** The demo screen of a database seeded before screens had a place gets linked to the demo place (never relinked). */
+    private function linkDemoScreen(): void
+    {
+        $hall = $this->em->getRepository(Screen::class)->findOneBy(['name' => self::DEMO_SCREEN]);
+        if (null !== $hall && null === $hall->getPlaceId()) {
+            $hall->setPlace(self::DEMO_PLACE, self::DEMO_PLACE_NAME);
+        }
     }
 
     /**

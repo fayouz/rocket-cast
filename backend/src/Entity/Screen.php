@@ -31,6 +31,14 @@ class Screen
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $location = null;
 
+    /** Rocket Place place the screen stands in (optional, a plain UUID: Cast never calls Place for it). */
+    #[ORM\Column(length: 36, nullable: true)]
+    private ?string $placeId = null;
+
+    /** Name of that place as last given (display cache, so lists need no call to Rocket Place). */
+    #[ORM\Column(length: 120, nullable: true)]
+    private ?string $placeName = null;
+
     #[ORM\Column(length: 64, unique: true, nullable: true)]
     private ?string $tokenHash = null;
 
@@ -92,6 +100,26 @@ class Screen
     public function setLocation(?string $location): static
     {
         $this->location = null === $location || '' === trim($location) ? null : trim($location);
+
+        return $this;
+    }
+
+    public function getPlaceId(): ?string
+    {
+        return $this->placeId;
+    }
+
+    public function getPlaceName(): ?string
+    {
+        return $this->placeName;
+    }
+
+    /** Links the screen to a place ($placeId null: unlinked, the cached name is dropped too). */
+    public function setPlace(?string $placeId, ?string $placeName = null): static
+    {
+        $this->placeId = null === $placeId || '' === $placeId ? null : strtolower($placeId);
+        $placeName = null === $placeName ? null : trim($placeName);
+        $this->placeName = null === $this->placeId || '' === $placeName ? null : $placeName;
 
         return $this;
     }
