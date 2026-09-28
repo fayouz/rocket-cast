@@ -98,8 +98,10 @@ final class SourceController extends AbstractController
     #[IsGranted('ROLE_ADMIN')]
     public function delete(#[MapEntity] Source $source): Response
     {
+        $sealed = $source->getSealedSecrets();
         $this->em->remove($source);
         $this->em->flush();
+        $this->secrets->forget($sealed);
 
         return new Response(null, Response::HTTP_NO_CONTENT);
     }
@@ -177,7 +179,9 @@ final class SourceController extends AbstractController
                     throw new UnprocessableEntityHttpException(\sprintf('« %s » est obligatoire.', $field['label']));
                 }
             }
+            $previous = $source->getSealedSecrets();
             $source->setSealedSecrets($this->secrets->seal($current));
+            $this->secrets->forget($previous);
         }
         if ($changed) {
             $source->resetPayload();

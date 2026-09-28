@@ -172,7 +172,7 @@ async function remove() {
         variant="subtle"
         color="neutral"
         title="Intégrations"
-        description="Les sources alimentent les panneaux « Source » : livret d’accueil et voyageurs de Rocket PMS, valeurs domotiques de Rocket Place, n’importe quelle API JSON. Les jetons sont chiffrés en base et jamais réaffichés ; les écrans gardent les dernières données si une source ne répond plus."
+        description="Les sources alimentent les panneaux « Source » : livret d’accueil et voyageurs de Rocket PMS, valeurs domotiques de Rocket Place, n’importe quelle API JSON. Les jetons sont gardés dans le coffre des secrets (chiffrés) et jamais réaffichés ; les écrans gardent les dernières données si une source ne répond plus."
       />
       <UTable :data="sources" :columns="columns" :loading="status === 'pending'" :empty="isAdmin ? 'Aucune source : ajoutez-en une.' : 'Aucune source : demandez à un administrateur.'" />
 
@@ -193,7 +193,7 @@ async function remove() {
               :key="field.key"
               :label="field.label"
               :required="field.required && !(field.secret && editing?.secrets?.[field.key])"
-              :help="field.secret && editing?.secrets?.[field.key] ? 'Enregistré (chiffré) : laisser vide pour le garder.' : field.help"
+              :help="field.secret && editing?.secrets?.[field.key] ? 'Enregistré dans le coffre (masqué) : laisser vide pour le garder.' : field.help"
               :class="{ 'sm:col-span-2': field.type === 'textarea' || field.type === 'url' }"
             >
               <template v-if="field.secret">
@@ -206,7 +206,7 @@ async function remove() {
               <USelect v-else-if="field.type === 'select'" v-model="form.config[field.key]" :items="field.options" class="w-full" />
               <UInput v-else v-model="form.config[field.key]" :type="field.type === 'email' ? 'email' : 'text'" class="w-full" :placeholder="field.placeholder" />
             </UFormField>
-            <UAlert v-if="editing && editing.secretsReadable === false" class="sm:col-span-2" color="warning" variant="subtle" description="Les identifiants enregistrés ne sont plus lisibles (ROCKET_SECRETS_KEY a changé) : saisissez-les à nouveau." />
+            <UAlert v-if="editing && editing.secretsReadable === false" class="sm:col-span-2" color="warning" variant="subtle" description="Les identifiants enregistrés ne sont plus lisibles dans le coffre des secrets (ROCKET_SECRETS_KEY a changé ou secret supprimé) : saisissez-les à nouveau." />
             <div class="flex items-end sm:col-span-2">
               <USwitch v-model="form.enabled" label="Active" />
             </div>

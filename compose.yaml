@@ -13,9 +13,10 @@ x-api-env: &api-env
   SETUP_TOKEN: ${SETUP_TOKEN:-}
   # Encrypts the secrets stored in the database (empty: derived from APP_SECRET).
   SECRETS_ENCRYPTION_KEY: ${SECRETS_ENCRYPTION_KEY:-}
-  # Rocket Cast: master key of the source credentials stored in the database (`openssl rand -hex 32`; empty: derived
-  # from APP_SECRET, development only), timeout of the source requests, Rocket Cloud origin accepted by image panels.
+  # Rocket Cast: master key of the rocket-core secrets vault holding the source credentials (base64 of 32 bytes,
+  # `php bin/console rocket:secrets:generate-key`; CAST_LEGACY_SECRETS_KEY: former hex key, until app:secrets:migrate), timeout of the source requests, Rocket Cloud origin accepted by image panels.
   ROCKET_SECRETS_KEY: ${ROCKET_SECRETS_KEY:-}
+  CAST_LEGACY_SECRETS_KEY: ${CAST_LEGACY_SECRETS_KEY:-}
   CAST_SOURCE_TIMEOUT: ${CAST_SOURCE_TIMEOUT:-5}
   CAST_CLOUD_URL: ${CAST_CLOUD_URL:-}
   FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3600}

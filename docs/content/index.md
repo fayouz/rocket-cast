@@ -105,7 +105,7 @@ Ce que vous pouvez faire
   Identifiants chiffrés
 
   #description
-  Jetons des sources chiffrés en base (ROCKET_SECRETS_KEY), jamais renvoyés par l'API ; liens d'écran révocables.
+  Jetons des sources dans le coffre des secrets de rocket-core, jamais renvoyés par l'API ; liens d'écran révocables.
   :::
 
   :::u-page-feature
