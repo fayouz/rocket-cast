@@ -58,13 +58,13 @@ final class KioskController extends AbstractController
 
     /** A fresh screen asks for a pairing code. Keep "secret": it is the only way to poll. */
     #[Route('/api/public/pairings', name: 'api_public_pairing_create', methods: ['POST'])]
-    public function createPairing(Request $request, PairingRequestRepository $pairings): JsonResponse
+    public function createPairing(Request $request, PairingRequestRepository $pairings, SecretStoreInterface $secrets): JsonResponse
     {
         $this->limiter->hit($request);
         // Creating codes counts as a failure: at most 10 a minute per IP.
         $this->limiter->failure($request);
         $now = $this->clock->now();
-        $pairings->purgeExpired($now);
+        $pairings->purgeExpired($now, $secrets);
         $secret = rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '=');
         $pairing = new PairingRequest($now, $secret, $request->headers->get('User-Agent'));
         $this->em->persist($pairing);
@@ -98,8 +98,10 @@ final class KioskController extends AbstractController
             $token = '';
         }
         $name = $pairing->getScreen()->getName();
+        $sealed = $pairing->getSealedToken();
         $this->em->remove($pairing);
         $this->em->flush();
+        $secrets->forget($sealed);
         if ('' === $token) {
             throw new NotFoundHttpException('Appairage à refaire.');
         }

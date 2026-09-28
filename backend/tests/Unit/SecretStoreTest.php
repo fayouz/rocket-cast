@@ -6,30 +6,29 @@ use App\Secret\SecretException;
 use App\Secret\SodiumSecretStore;
 use PHPUnit\Framework\TestCase;
 
+/** Former libsodium store: only reads the values sealed before the rocket-core vault. */
 final class SecretStoreTest extends TestCase
 {
-    public function testSealsAndOpens(): void
+    public function testOpensTheFormerFormatWithAnyCandidateKey(): void
     {
-        $store = new SodiumSecretStore(str_repeat('ab', 32), 'app-secret');
-        $sealed = $store->seal(['token' => 'rpl_very_secret']);
+        $sealed = SodiumSecretStore::sealWith(str_repeat('ab', 32), ['token' => 'rpl_very_secret']);
         self::assertStringStartsWith('v1:', $sealed);
         self::assertStringNotContainsString('rpl_very_secret', $sealed);
-        self::assertNotSame($sealed, $store->seal(['token' => 'rpl_very_secret']), 'Random nonce');
-        self::assertSame(['token' => 'rpl_very_secret'], $store->open($sealed));
-        self::assertSame('', $store->seal([]));
-        self::assertSame([], $store->open(''));
+        self::assertSame(['token' => 'rpl_very_secret'], (new SodiumSecretStore(str_repeat('ab', 32), 'new-vault-key', 'app-secret'))->open($sealed));
+        self::assertSame(['token' => 'rpl_very_secret'], (new SodiumSecretStore(null, str_repeat('ab', 32), 'app-secret'))->open($sealed));
+        self::assertSame([], (new SodiumSecretStore(null, '', 'x'))->open(''));
     }
 
     public function testAnotherKeyCannotOpen(): void
     {
-        $sealed = (new SodiumSecretStore(str_repeat('ab', 32), 'x'))->seal(['token' => 'secret']);
+        $sealed = SodiumSecretStore::sealWith(str_repeat('ab', 32), ['token' => 'secret']);
         $this->expectException(SecretException::class);
-        (new SodiumSecretStore(str_repeat('cd', 32), 'x'))->open($sealed);
+        (new SodiumSecretStore(null, str_repeat('cd', 32), 'x'))->open($sealed);
     }
 
     public function testFallsBackOnAppSecret(): void
     {
-        $sealed = (new SodiumSecretStore('', 'app-secret'))->seal(['a' => 'b']);
-        self::assertSame(['a' => 'b'], (new SodiumSecretStore('', 'app-secret'))->open($sealed));
+        $sealed = SodiumSecretStore::sealWith('app-secret', ['a' => 'b']);
+        self::assertSame(['a' => 'b'], (new SodiumSecretStore(null, '', 'app-secret'))->open($sealed));
     }
 }
