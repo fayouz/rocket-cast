@@ -23,11 +23,12 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Requirement\Requirement;
+use Symfony\Component\ExpressionLanguage\Expression;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Uid\Uuid;
 
 /** Screens: CRUD, kiosk link (shown once: create, rotate, pairing), revocation. */
-#[IsGranted('ROLE_USER')]
+#[IsGranted(new Expression("is_granted('ROLE_USER') or is_granted('ROLE_APPLICATION')"))]
 final class ScreenController extends AbstractController
 {
     public function __construct(
@@ -63,6 +64,7 @@ final class ScreenController extends AbstractController
     }
 
     #[Route('/api/screens', name: 'api_screen_create', methods: ['POST'])]
+    #[IsGranted('ROLE_USER')]
     public function create(Request $request): JsonResponse
     {
         $screen = new Screen();
@@ -75,6 +77,7 @@ final class ScreenController extends AbstractController
     }
 
     #[Route('/api/screens/{id}', name: 'api_screen_update', methods: ['PATCH'], requirements: ['id' => Requirement::UUID])]
+    #[IsGranted('ROLE_USER')]
     public function update(#[MapEntity] Screen $screen, Request $request): JsonResponse
     {
         $this->apply($screen, JsonBody::of($request), false);
@@ -84,6 +87,7 @@ final class ScreenController extends AbstractController
     }
 
     #[Route('/api/screens/{id}', name: 'api_screen_delete', methods: ['DELETE'], requirements: ['id' => Requirement::UUID])]
+    #[IsGranted('ROLE_USER')]
     public function delete(#[MapEntity] Screen $screen): Response
     {
         $this->em->remove($screen);
@@ -94,6 +98,7 @@ final class ScreenController extends AbstractController
 
     /** New kiosk link: the previous one stops working. The link is only shown in this response. */
     #[Route('/api/screens/{id}/token', name: 'api_screen_token_rotate', methods: ['POST'], requirements: ['id' => Requirement::UUID])]
+    #[IsGranted('ROLE_USER')]
     public function rotate(#[MapEntity] Screen $screen): JsonResponse
     {
         $token = $screen->rotateToken();
@@ -103,6 +108,7 @@ final class ScreenController extends AbstractController
     }
 
     #[Route('/api/screens/{id}/token', name: 'api_screen_token_revoke', methods: ['DELETE'], requirements: ['id' => Requirement::UUID])]
+    #[IsGranted('ROLE_USER')]
     public function revoke(#[MapEntity] Screen $screen): JsonResponse
     {
         $screen->revokeToken();
@@ -116,6 +122,7 @@ final class ScreenController extends AbstractController
      * to a new one ("name" and the other settings). The screen then receives its kiosk link by itself.
      */
     #[Route('/api/screens/pair', name: 'api_screen_pair', methods: ['POST'])]
+    #[IsGranted('ROLE_USER')]
     public function pair(Request $request, PairingRequestRepository $pairings, SecretStoreInterface $secrets): JsonResponse
     {
         $data = JsonBody::of($request);
